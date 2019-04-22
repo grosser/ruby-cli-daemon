@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby_cli_daemon (0.0.0)
+    ruby-cli-daemon (0.0.0)
 
 GEM
   remote: https://rubygems.org/
@@ -38,7 +38,7 @@ DEPENDENCIES
   maxitest
   rake
   rubocop
-  ruby_cli_daemon!
+  ruby-cli-daemon!
   single_cov
 
 BUNDLED WITH

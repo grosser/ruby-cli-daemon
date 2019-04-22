@@ -1,7 +1,7 @@
 # frozen_string_literal: true
-name = "ruby_cli_daemon"
+name = "ruby-cli-daemon"
 $LOAD_PATH << File.expand_path("lib", __dir__)
-require "#{name.tr("-", "/")}/version"
+require "ruby_cli_daemon/version"
 
 Gem::Specification.new name, RubyCliDaemon::VERSION do |s|
   s.summary = "Preforking daemon that makes all ruby binaries faster"
@@ -11,4 +11,5 @@ Gem::Specification.new name, RubyCliDaemon::VERSION do |s|
   s.files = `git ls-files lib/ bin/ MIT-LICENSE`.split("\n")
   s.license = "MIT"
   s.required_ruby_version = ">= 2.3.0"
+  s.executables = [name]
 end
