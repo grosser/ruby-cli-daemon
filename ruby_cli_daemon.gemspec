@@ -11,5 +11,4 @@ Gem::Specification.new name, RubyCliDaemon::VERSION do |s|
   s.files = `git ls-files lib/ bin/ MIT-LICENSE`.split("\n")
   s.license = "MIT"
   s.required_ruby_version = ">= 2.3.0"
-  s.executables = [name]
 end

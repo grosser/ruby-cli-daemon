@@ -1,29 +1,29 @@
-Preforking daemon that makes all ruby binaries faster (assumes bundle exec)
+Preforking to make all ruby binaries faster.
 
-When executing a ruby executable like `rubocop`, reuse an existing background fork instead to make it execute instantly.
-
-- Fork is kept alive per directory 
-- Fork gets restarted when Gemfile.lock changes
-- Fork shuts down when not used for 1 hour
-
-Install
-=======
-
-```Bash
-time bundle exec rubocop -v # 1.2s
-
-gem install ruby-cli-daemon
-ruby-cli-daemon wrap rubocop
-
-time rubocop -v # 0.01s
-```
+- Worker starts when needed
+- Worker is kept alive per directory and executable
+- Worker stops when not used for 1 hour
 
 Usage
 =====
 
-```Ruby
-CODE EXAMPLE
+```Bash
+# install gem and shell executable
+gem install ruby-cli-daemon
+ruby -rruby_cli_daemon -e "RubyCliDaemon.install '/usr/local/bin/ruby-cli-daemon'"
+
+time ruby-cli-daemon rubocop -v # 1.20s
+time ruby-cli-daemon rubocop -v # 0.08s
 ```
+
+TODO
+====
+ - restart when Gemfile.lock changes
+ - support executables that are not named after their libraries
+ - better error output when worker fails to  start
+ - `stop` command to kill all workers
+ - `--version` in sh support
+ - capture nohup pid and check that is running
 
 Author
 ======

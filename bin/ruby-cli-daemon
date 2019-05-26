@@ -1,7 +1,0 @@
-#!/usr/bin/env ruby
-# frozen_string_literal: true
-
-minimum = $0
-paths = ENV["PATH"].split(":")
-
-puts "X #{minimum} -- #{paths}"

@@ -51,3 +51,6 @@ Layout/FirstMethodParameterLineBreak:
 # https://github.com/rubocop-hq/rubocop/issues/5891
 Style/SpecialGlobalVars:
   Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
