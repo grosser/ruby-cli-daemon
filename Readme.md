@@ -17,6 +17,11 @@ rubocop -v # cold start 1.20s
 rubocop -v # warm start 0.08s
 ```
 
+Traps
+=====
+ - do not use to `rake release` a gem, since gemspec will not be reloaded
+ - worker does not restart when: Gemfile/Env/Gem/monkey-patches change
+
 TODO
 ====
  - unit tests
