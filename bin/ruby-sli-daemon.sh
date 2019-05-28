@@ -21,8 +21,8 @@ stderr="${socket}.err"
 rm -f $status $stdout $stderr # clear previous
 touch $stdout $stderr
 
-# send the command to the daemon use "--" to avoid things like "-v" that are supported in printf
-printf -- "$@" | nc -U $socket
+# send the command to the daemon
+echo $@ | nc -U $socket
 
 # stream output
 tail -f $stdout &
