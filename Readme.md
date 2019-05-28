@@ -20,10 +20,8 @@ TODO
 ====
  - restart when Gemfile.lock changes
  - support executables that are not named after their libraries
- - better error output when worker fails to  start
  - `stop` command to kill all workers
  - `--version` in sh support
- - capture nohup pid and check that is running
 
 Author
 ======
