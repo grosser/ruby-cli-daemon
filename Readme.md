@@ -12,8 +12,9 @@ Usage
 gem install ruby-cli-daemon
 ruby -rruby_cli_daemon -e "RubyCliDaemon.install '/usr/local/bin/ruby-cli-daemon'"
 
-time ruby-cli-daemon rubocop -v # 1.20s
-time ruby-cli-daemon rubocop -v # 0.08s
+alias rubocop="ruby-cli-daemon rubocop" # add to ~/.bash_profile
+rubocop -v # cold start 1.20s
+rubocop -v # warm start 0.08s
 ```
 
 TODO
