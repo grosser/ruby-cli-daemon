@@ -19,6 +19,10 @@ rubocop -v # warm start 0.08s
 
 TODO
 ====
+ - unit tests
+ - support multiline inputs
+ - support stdin
+ - restart when ENV changes ?
  - restart when Gemfile.lock changes
  - support executables that are not named after their libraries
 
