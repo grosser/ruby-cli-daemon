@@ -7,7 +7,7 @@ socket=${TMPDIR}ruby-cli-daemon/$(basename $PWD)/${executable}
 
 # spawn new daemon if none exists
 if [[ ! -e $socket ]]; then
-  # load bundler after absolute executable so a single gem install is enough for all rubies
+  # absolute executable so a single gem install is enough for all rubies
   nohup ruby -r$(dirname $(realpath $0))/../lib/ruby_cli_daemon.rb -rbundler/setup -e RubyCliDaemon.start\ \"$socket\",\ \"$executable\" 0<&- &>/dev/null &
   while [ ! -e $socket ]; do
     sleep 0.1
