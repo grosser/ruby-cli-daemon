@@ -21,7 +21,6 @@ TODO
  - restart when Gemfile.lock changes
  - support executables that are not named after their libraries
  - `stop` command to kill all workers
- - `-h` / `--help` in sh support
 
 Author
 ======

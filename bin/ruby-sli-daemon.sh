@@ -7,6 +7,14 @@ case "$1" in
 -v|--version)
   exec ruby -r$lib/ruby_cli_daemon/version.rb -e "puts RubyCliDaemon::VERSION"
   ;;
+-h|--help)
+  echo "Usage: ruby-cli-daemon <ruby-executable> [argument]*"
+  echo ""
+  echo "Options:"
+  echo " -v / --version     Show version"
+  echo " -h / --help        Show this help"
+  exit
+  ;;
 esac
 
 executable=$1
