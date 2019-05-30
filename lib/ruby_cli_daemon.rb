@@ -10,7 +10,6 @@ module RubyCliDaemon
     def install(path)
       File.unlink(path) if File.exist?(path)
       File.symlink(File.expand_path("../bin/ruby-sli-daemon.sh", __dir__), path)
-      FileUtils.chmod("+x", path)
     end
 
     def start(socket, executable)
@@ -24,8 +23,8 @@ module RubyCliDaemon
         capture :STDOUT, "#{socket}.out" do
           capture :STDERR, "#{socket}.err" do
             _, status = Process.wait2(fork do
-              ARGV.replace(command)
-              load path
+              ARGV.replace(command) # uncovered
+              load path # uncovered
             end)
 
             # send back response
@@ -57,7 +56,6 @@ module RubyCliDaemon
     end
 
     def create_socket(socket)
-      File.unlink socket if File.exist?(socket)
       FileUtils.mkdir_p(File.dirname(socket))
       UNIXServer.new(socket)
     end

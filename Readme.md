@@ -12,7 +12,7 @@ Usage
 gem install ruby-cli-daemon
 ruby -rruby_cli_daemon -e "RubyCliDaemon.install '/usr/local/bin/ruby-cli-daemon'"
 
-alias rubocop="ruby-cli-daemon rubocop" # add to ~/.bash_profile
+alias rubocop="ruby-cli-daemon rubocop --color" # add to ~/.bash_profile
 rubocop -v # cold start 1.20s
 rubocop -v # warm start 0.08s
 ```
@@ -24,10 +24,9 @@ Traps
 
 TODO
 ====
- - unit tests
  - support multiline inputs
  - support stdin
- - restart when ENV changes ?
+ - pass through env
  - restart when Gemfile.lock changes
  - support executables that are not named after their libraries
 
