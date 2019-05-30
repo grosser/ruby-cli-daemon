@@ -41,8 +41,9 @@ module RubyCliDaemon
 
     # preload the libraries we'll need to speed up execution
     def preload_gem(executable)
-      require executable
-      path = Gem.bin_path(executable, executable)
+      spec = Gem.loaded_specs.each_value.detect { |s| s.executables.include?(executable) }
+      path = spec.bin_file executable
+      require spec.name
       GC.start # https://bugs.ruby-lang.org/issues/15878
       path
     end

@@ -28,7 +28,6 @@ TODO
  - support stdin
  - pass through env
  - restart when Gemfile.lock changes
- - support executables that are not named after their libraries
 
 Author
 ======

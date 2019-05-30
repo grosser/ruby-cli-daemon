@@ -50,6 +50,11 @@ describe RubyCliDaemon do
       assert_raises(ArgumentError) { RubyCliDaemon.start("foo", "rake") }
       refute File.exist?("foo")
     end
+
+    it "supports executables with uncommon names" do
+      IO.expects(:select).returns(nil)
+      RubyCliDaemon.start("foo", "mtest")
+    end
   end
 
   describe ".capture" do
