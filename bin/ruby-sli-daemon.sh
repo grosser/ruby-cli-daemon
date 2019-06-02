@@ -11,7 +11,7 @@ stop)
 -v|--version)
   exec ruby -r$lib/ruby_cli_daemon/version.rb -e "puts RubyCliDaemon::VERSION"
   ;;
--h|--help)
+""|-*)
   echo "Usage:"
   echo "  ruby-cli-daemon <ruby-executable> [arg]*"
   echo "    Start or use background worker to execute command"
@@ -23,7 +23,11 @@ stop)
   echo "Options:"
   echo "  -v / --version     Show version"
   echo "  -h / --help        Show this help"
-  exit
+  if [[ "$1" = "-h" || "$1" = "--help" ]]; then
+    exit 0
+  else
+    exit 1
+  fi
   ;;
 esac
 
