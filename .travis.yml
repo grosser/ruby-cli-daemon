@@ -1,9 +1,12 @@
 language: ruby
 sudo: false
+os:
+- osx
+- linux
 cache: bundler
 branches:
   only: master
-script: bundle exec rake $TASK
+script: TESTOPTS=-v bundle exec rake $TASK
 env:
 - TASK=test
 before_install: ruby -e "File.write('Gemfile.lock', File.read('Gemfile.lock').split('BUNDLED WITH').first)"
@@ -16,3 +19,6 @@ matrix:
   include:
   - rvm: 2.3 # keep in sync with lowest version
     env: TASK=rubocop
+  allow_failures:
+  - os: linux
+  fast_finish: true

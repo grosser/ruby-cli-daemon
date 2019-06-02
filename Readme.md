@@ -29,6 +29,8 @@ TODO
  - support stdin
  - pass through env
  - restart when Gemfile.lock changes
+ - support debian
+ - do not print "Terminated" when killing log streamers (happens on osx CI)
 
 Author
 ======
