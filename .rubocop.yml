@@ -54,3 +54,6 @@ Style/SpecialGlobalVars:
 
 Style/IfUnlessModifier:
   Enabled: false
+
+Security/MarshalLoad:
+  Enabled: false

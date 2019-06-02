@@ -13,8 +13,8 @@ module RubyCliDaemon
     end
 
     def start(socket, executable)
-      server = create_socket(socket)
       path = preload_gem(executable)
+      server = create_socket(socket) # do this last, it signals we are ready
 
       loop do
         return unless (command = wait_for_command(server))
@@ -39,13 +39,44 @@ module RubyCliDaemon
 
     private
 
-    # preload the libraries we'll need to speed up execution
+    # preload the libraries we'll need, to speed up execution
+    # first try with bundler and then without
     def preload_gem(executable)
-      spec = Gem.loaded_specs.each_value.detect { |s| s.executables.include?(executable) }
-      path = spec.bin_file executable
-      require spec.name
+      name, path = fork_with_return do
+        require "bundler/setup"
+        find_gem_spec(executable)
+      end
+
+      if name
+        require "bundler/setup"
+      else
+        name, path = find_gem_spec(executable)
+        raise "No gem with executable #{executable} found" unless name
+      end
+
+      require name
       GC.start # https://bugs.ruby-lang.org/issues/15878
       path
+    end
+
+    def find_gem_spec(executable)
+      spec = Gem::Specification.detect { |s| s.executables.include?(executable) }
+      [spec.name, spec.bin_file(executable)] if spec # need something we can send out from fork
+    end
+
+    def fork_with_return
+      read, write = IO.pipe
+      Process.wait(fork do
+        read.close
+        begin
+          Marshal.dump(yield, write)
+        rescue StandardError => e
+          Marshal.dump(e, write)
+        end
+      end)
+      write.close
+      result = Marshal.load(read)
+      result.is_a?(StandardError) ? raise(result) : result
     end
 
     def wait_for_command(server)

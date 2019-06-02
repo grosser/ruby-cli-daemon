@@ -41,10 +41,10 @@ log=${TMPDIR}ruby_cli_daemon.log
 # spawn new daemon if none exists
 if [[ ! -e $socket ]]; then
   # absolute executable so a single gem install is enough for all rubies
-  nohup ruby -r$lib/ruby_cli_daemon.rb -rbundler/setup -e RubyCliDaemon.start\ \"$socket\",\ \"$executable\" 0<&- &>$log &
+  nohup ruby -r$lib/ruby_cli_daemon.rb -e RubyCliDaemon.start\ \"$socket\",\ \"$executable\" 0<&- &>$log &
   while [ ! -e $socket ]; do
     sleep 0.1
-    kill -0 $(jobs -p) || (echo "Failed to start worker, check $log" && false) # fail fast when worker failed
+    kill -0 $(jobs -p) &>/dev/null || (cat $log && false) # fail fast when worker failed
   done
 fi
 

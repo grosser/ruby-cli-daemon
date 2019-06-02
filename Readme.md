@@ -2,6 +2,7 @@ Preforking to make all ruby binaries faster.
 
 - Worker starts when needed
 - Worker is kept alive per directory and executable
+- Worker prefer bundled executables
 - Worker stops when not used for 1 hour
 
 Usage

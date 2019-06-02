@@ -65,7 +65,18 @@ describe "ruby-cli-daemon.sh" do
   describe "run" do
     let(:running) { `pgrep -f ruby_cli_daemon`.count("\n") }
 
+    # execute in our own folder
     around { |t| Dir.mktmpdir { |d| Dir.chdir(d) { t.call } } }
+
+    # do not preload bundler, but when it loads then use local Gemfile that is already bundled
+    around do |t|
+      Bundler.with_original_env do
+        ENV["BUNDLE_GEMFILE"] = "#{Bundler.root}/Gemfile"
+        t.call
+      end
+    end
+
+    # shut everything down after each test
     after { cli("stop") if running > 0 }
 
     it "is fast when preforked" do
@@ -94,7 +105,7 @@ describe "ruby-cli-daemon.sh" do
 
     it "fails when worker crashes" do
       out = cli "wtf", fail: true
-      out.must_include "Failed to start worker"
+      out.must_include "No gem with executable wtf found"
     end
 
     it "streams" do
@@ -107,6 +118,11 @@ describe "ruby-cli-daemon.sh" do
       end
       reply.size.must_equal 2
       (reply[1] - reply[0]).must_be_within_delta 0.1, 0.05
+    end
+
+    it "can use gems outside of the bundle" do
+      raise unless system("ruby -rpru -e 1 &>/dev/null || gem install pru --no-doc >/dev/null")
+      cli("pru", "--version")
     end
   end
 end

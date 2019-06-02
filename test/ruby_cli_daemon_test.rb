@@ -29,7 +29,7 @@ describe RubyCliDaemon do
     it "waits for input and executes it" do
       Thread.new { RubyCliDaemon.start("foo", "rake") }
 
-      sleep 0.1 # wait for socket to open
+      sleep 0.2 # wait for socket to open
       UNIXSocket.new("foo").puts "--version"
       sleep 0.2 # wait for command to process
       maxitest_kill_extra_threads
@@ -55,6 +55,21 @@ describe RubyCliDaemon do
       IO.expects(:select).returns(nil)
       RubyCliDaemon.start("foo", "mtest")
     end
+
+    it "complains when executable was not found" do
+      Gem::Specification.expects(:detect).returns(nil) # called in the fork too, but cannot expect that
+      e = assert_raises RuntimeError do
+        RubyCliDaemon.start("foo", "mtest")
+      end
+      e.message.must_equal "No gem with executable mtest found"
+    end
+
+    it "tries bundler and rubygems" do
+      Gem::Specification.expects(:detect).times(2).returns(nil, stub(name: "bundler", bin_file: "bar"))
+      RubyCliDaemon.expects(:fork_with_return).yields.returns(nil)
+      IO.expects(:select).returns(nil)
+      RubyCliDaemon.start("foo", "mtest")
+    end
   end
 
   describe ".capture" do
@@ -66,6 +81,30 @@ describe RubyCliDaemon do
         end
         f.rewind
         f.read.must_equal "1\n2\n"
+      end
+    end
+  end
+
+  describe ".fork_with_return" do
+    it "returns" do
+      RubyCliDaemon.send(:fork_with_return) { 1 }.must_equal 1
+    end
+
+    it "forks" do
+      RubyCliDaemon.send(:fork_with_return) { ENV["FOO"] = '1' }
+      ENV["FOO"].must_be_nil
+    end
+
+    it "re-raises on error" do
+      assert_raises ArgumentError do
+        RubyCliDaemon.send(:fork_with_return) { raise ArgumentError }
+      end
+    end
+
+    it "executes inside" do
+      RubyCliDaemon.expects(:fork).yields
+      assert_raises Errno::EPIPE do
+        RubyCliDaemon.send(:fork_with_return) { 1 }
       end
     end
   end
