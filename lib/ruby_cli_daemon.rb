@@ -9,7 +9,7 @@ module RubyCliDaemon
   class << self
     def install(path)
       File.unlink(path) if File.exist?(path)
-      File.symlink(File.expand_path("../bin/ruby-sli-daemon.sh", __dir__), path)
+      File.symlink(File.expand_path("../bin/ruby-cli-daemon.sh", __dir__), path)
     end
 
     def start(socket, executable)
@@ -18,11 +18,12 @@ module RubyCliDaemon
 
       loop do
         return unless (command = wait_for_command(server))
-
+        command, env = command
         # execute the command in a fork
         capture :STDOUT, "#{socket}.out" do
           capture :STDERR, "#{socket}.err" do
             _, status = Process.wait2(fork do
+              ENV.replace env
               ARGV.replace(command) # uncovered
               load path # uncovered
             end)
@@ -83,8 +84,9 @@ module RubyCliDaemon
       return unless IO.select([server], nil, nil, TIMEOUT)
       connection = server.accept
       command = connection.gets.shellsplit
+      env = Hash[connection.read.split("--RCD-- ")[1..-1].map { |s| s.split(/ /, 2) }]
       connection.close
-      command
+      [command, env]
     end
 
     def create_socket(socket)

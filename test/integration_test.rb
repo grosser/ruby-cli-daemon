@@ -21,10 +21,18 @@ describe "ruby-cli-daemon.sh" do
   end
 
   def cli(*argv, fail: false, capture: true, &block)
-    command = ["#{Bundler.root}/bin/ruby-sli-daemon.sh", *argv].shelljoin
+    command = ["#{Bundler.root}/bin/ruby-cli-daemon.sh", *argv].shelljoin
     output = IO.popen("#{command} #{"2>&1" if capture}", &(block || :read))
     raise "#{fail ? "UNEXPECTED SUCCESS" : "FAILURE"}\n#{command}\n#{output}" if $?.success? == fail
     output
+  end
+
+  def with_env(env)
+    old = ENV.to_h
+    env.each { |k, v| ENV[k.to_s] = v }
+    yield
+  ensure
+    ENV.replace old
   end
 
   describe "options" do
@@ -145,6 +153,19 @@ describe "ruby-cli-daemon.sh" do
         cli("rake", "--version")
       end
       assert_running 2
+    end
+
+    it "can use env vars" do
+      File.write("Rakefile", <<-RUBY)
+        task(:foo) { puts "X\#{ENV["CUSTOM"]}" }
+      RUBY
+      cli("rake", "foo").must_equal "X\n"
+      with_env CUSTOM: "Y" do
+        cli("rake", "foo").must_equal "XY\n"
+      end
+      with_env CUSTOM: "Y\n|\\Z" do
+        cli("rake", "foo").must_equal "XY\n|\\Z\n"
+      end
     end
   end
 end

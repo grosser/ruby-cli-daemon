@@ -1,9 +1,11 @@
 Preforking to make all ruby binaries faster.
 
-- Worker starts when needed
-- Worker is kept alive per directory and executable
-- Worker prefer bundled executables
-- Worker stops when not used for 1 hour
+Worker:
+- starts when needed
+- is kept alive per directory and executable
+- prefer bundled executables
+- stops when not used for 1 hour
+- uses callee's environment
 
 Usage
 =====
@@ -21,13 +23,13 @@ rubocop -v # warm start 0.08s
 Traps
 =====
  - do not use to `rake release` a gem, since gemspec will not be reloaded
- - worker does not restart when: Gemfile/Env/Gem/monkey-patches change
+ - worker does not restart when: Gemfile/Gem/monkey-patches change
+ - env vars that are read on startup cannot be changed 
 
 TODO
 ====
  - support multiline inputs
  - support stdin
- - pass through env
  - restart when Gemfile.lock changes
  - support debian
  - do not print "Terminated" when killing log streamers (happens on osx CI)

@@ -55,8 +55,8 @@ stderr="${socket}.err"
 rm -f $status $stdout $stderr # clear previous
 touch $stdout $stderr
 
-# send the command to the daemon
-echo $@ | nc -U $socket
+# send the command and parsable env vars to the daemon
+{ echo $@; awk 'BEGIN{for(v in ENVIRON) printf "--RCD-- %s %s", v, ENVIRON[v] }';} | nc -U $socket
 
 # stream output
 tail -f $stdout &
