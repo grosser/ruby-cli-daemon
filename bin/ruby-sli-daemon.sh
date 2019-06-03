@@ -44,7 +44,7 @@ if [[ ! -e $socket ]]; then
   nohup ruby -r$lib/ruby_cli_daemon.rb -e RubyCliDaemon.start\ \"$socket\",\ \"$executable\" 0<&- &>$log &
   while [ ! -e $socket ]; do
     sleep 0.1
-    kill -0 $(jobs -p) &>/dev/null || (cat $log && false) # fail fast when worker failed
+    kill -0 $(jobs -p) &>/dev/null || (cat $log && rm -f $log && false) # fail fast when worker failed
   done
 fi
 

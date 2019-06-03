@@ -50,8 +50,8 @@ describe "ruby-cli-daemon.sh" do
   describe "stop" do
     it "kills running processes" do
       Benchmark.realtime do
-        t = Thread.new { `ruby -e 'sleep 10 && puts "ruby_cli_daemon"'` }
-        sleep 0.1 # let thread start
+        t = Thread.new { `ruby -e 'sleep(10) && puts(%{ruby_cli_daemon})'` }
+        sleep 0.2 # let thread start
         cli("stop")
         t.value
       end.must_be :<, 0.5
@@ -80,9 +80,8 @@ describe "ruby-cli-daemon.sh" do
     after { cli("stop") if running > 0 }
 
     it "is fast when preforked" do
-      fast = 0.2
-      Benchmark.realtime { cli("rake", "--version") }.must_be :>, fast
-      Benchmark.realtime { cli("rake", "--version") }.must_be :<, fast
+      slow = Benchmark.realtime { cli("rake", "--version") }
+      Benchmark.realtime { cli("rake", "--version") }.must_be :<, slow / 2
     end
 
     it "does not leave streamers behind" do
@@ -100,7 +99,7 @@ describe "ruby-cli-daemon.sh" do
       capture_stderr do
         output = cli("rake", "--ohnooo", fail: true, capture: false)
         output.must_equal ""
-      end.must_equal "invalid option: --ohnooo\n"
+      end.must_include "invalid option: --ohnooo\n"
     end
 
     it "fails when worker crashes" do
@@ -114,10 +113,13 @@ describe "ruby-cli-daemon.sh" do
       RUBY
       reply = []
       cli "rake", "foo" do |io|
-        reply << Time.now.to_f while io.gets
+        while (line = io.gets)
+          reply << [line, Time.now.to_f]
+        end
       end
-      reply.size.must_equal 2
-      (reply[1] - reply[0]).must_be_within_delta 0.1, 0.05
+      reply.reject! { |line, _| line.include?("Terminated") }
+      reply.size.must_equal 2, reply
+      (reply[1][1] - reply[0][1]).must_be :>, 0.1, reply
     end
 
     it "can use gems outside of the bundle" do
