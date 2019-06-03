@@ -11,4 +11,5 @@ Gem::Specification.new name, RubyCliDaemon::VERSION do |s|
   s.files = `git ls-files lib/ bin/ MIT-LICENSE`.split("\n")
   s.license = "MIT"
   s.required_ruby_version = ">= 2.3.0"
+  s.post_install_message = %(To finish the update, run:\nruby -rruby_cli_daemon -e "RubyCliDaemon.install '/usr/local/bin/ruby-cli-daemon'")
 end
