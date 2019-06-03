@@ -63,7 +63,14 @@ describe "ruby-cli-daemon.sh" do
   end
 
   describe "run" do
-    let(:running) { `pgrep -f ruby_cli_daemon`.count("\n") }
+    def assert_running(size)
+      current = running
+      current.count("\n").must_equal size, current
+    end
+
+    def running
+      `pgrep -lf ruby_cli_daemon`
+    end
 
     # execute in our own folder
     around { |t| Dir.mktmpdir { |d| Dir.chdir(d) { t.call } } }
@@ -77,7 +84,7 @@ describe "ruby-cli-daemon.sh" do
     end
 
     # shut everything down after each test
-    after { cli("stop") if running > 0 }
+    after { cli("stop") unless running.empty? }
 
     it "is fast when preforked" do
       slow = Benchmark.realtime { cli("rake", "--version") }
@@ -86,13 +93,13 @@ describe "ruby-cli-daemon.sh" do
 
     it "does not leave streamers behind" do
       cli("rake", "--version")
-      running.must_equal 1
+      assert_running 1
     end
 
     it "can fail" do
       output = cli("rake", "--ohnooo", fail: true)
       output.must_include "invalid option: --ohnoo"
-      running.must_equal 1
+      assert_running 1
     end
 
     it "uses stderr" do
@@ -125,6 +132,19 @@ describe "ruby-cli-daemon.sh" do
     it "can use gems outside of the bundle" do
       raise unless system("ruby -rpru -e 1 &>/dev/null || gem install pru --no-doc >/dev/null")
       cli("pru", "--version")
+    end
+
+    it "it can run in different folders with the same name" do
+      Dir.mkdir "foo"
+      Dir.mkdir "foo/bar"
+      Dir.mkdir "bar"
+      Dir.chdir "foo/bar" do
+        cli("rake", "--version")
+      end
+      Dir.chdir "bar" do
+        cli("rake", "--version")
+      end
+      assert_running 2
     end
   end
 end

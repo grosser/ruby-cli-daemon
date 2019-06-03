@@ -35,7 +35,7 @@ executable=$1
 shift
 
 # matching the `stop` pattern so everything can be killed quickly
-socket=${TMPDIR}ruby_cli_daemon/$(basename $PWD)/${executable}
+socket=${TMPDIR}ruby_cli_daemon/$(pwd | md5 | cut -c1-7)/${executable}
 log=${TMPDIR}ruby_cli_daemon.log
 
 # spawn new daemon if none exists
