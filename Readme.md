@@ -24,7 +24,8 @@ Traps
 =====
  - do not use to `rake release` a gem, since gemspec will not be reloaded
  - worker does not restart when: Gemfile/Gem/monkey-patches change
- - env vars that are read on startup cannot be changed 
+ - env vars that are read on startup cannot be changed
+ - no TTY might some programs skip confirmation prompts or hang
 
 TODO
 ====
@@ -32,7 +33,7 @@ TODO
  - support stdin
  - restart when Gemfile.lock changes
  - support debian
- - do not print "Terminated" when killing log streamers (happens on osx CI)
+ - do not print "Terminated" when killing log streamers (happens on osx CI) see experiments/tail.sh
 
 Author
 ======

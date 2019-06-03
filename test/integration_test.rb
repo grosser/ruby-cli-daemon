@@ -24,7 +24,7 @@ describe "ruby-cli-daemon.sh" do
     command = ["#{Bundler.root}/bin/ruby-cli-daemon.sh", *argv].shelljoin
     output = IO.popen("#{command} #{"2>&1" if capture}", &(block || :read))
     raise "#{fail ? "UNEXPECTED SUCCESS" : "FAILURE"}\n#{command}\n#{output}" if $?.success? == fail
-    output
+    output&.gsub(/.*Terminated.*\n/, "")
   end
 
   def with_env(env)

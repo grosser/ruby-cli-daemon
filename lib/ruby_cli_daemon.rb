@@ -23,7 +23,7 @@ module RubyCliDaemon
         capture :STDOUT, "#{socket}.out" do
           capture :STDERR, "#{socket}.err" do
             _, status = Process.wait2(fork do
-              ENV.replace env
+              ENV.replace env # uncovered
               ARGV.replace(command) # uncovered
               load path # uncovered
             end)
@@ -82,9 +82,14 @@ module RubyCliDaemon
 
     def wait_for_command(server)
       return unless IO.select([server], nil, nil, TIMEOUT)
+
       connection = server.accept
       command = connection.gets.shellsplit
-      env = Hash[connection.read.split("--RCD-- ")[1..-1].map { |s| s.split(/ /, 2) }]
+
+      env = connection.read.split("--RCD-- ")
+      env.shift
+      env = Hash[env.map { |s| s.split(/ /, 2) }]
+
       connection.close
       [command, env]
     end

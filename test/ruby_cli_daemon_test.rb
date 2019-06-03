@@ -30,7 +30,7 @@ describe RubyCliDaemon do
       Thread.new { RubyCliDaemon.start("foo", "rake") }
 
       sleep 0.2 # wait for socket to open
-      UNIXSocket.new("foo").puts "--version"
+      UNIXSocket.open("foo") { |socket| socket.puts "--version\n" }
       sleep 0.2 # wait for command to process
       maxitest_kill_extra_threads
 
