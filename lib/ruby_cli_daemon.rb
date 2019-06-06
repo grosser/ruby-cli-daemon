@@ -103,12 +103,11 @@ module RubyCliDaemon
     # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
     def capture(stream, path)
       const = Object.const_get(stream)
+      const.sync = true
       old_stream = const.dup
-      const.flush # not sure if that's necessary
       const.reopen(path)
       yield
     ensure
-      const.flush # not sure if that's necessary
       const.reopen(old_stream)
     end
   end

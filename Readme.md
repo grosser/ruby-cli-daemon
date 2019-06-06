@@ -33,7 +33,7 @@ TODO
  - support stdin
  - restart when Gemfile.lock changes
  - support debian
- - do not print "Terminated" when killing log streamers (happens on osx CI) see experiments/tail.sh
+ - do not print "Terminated" when killing log streamers (happens on osx CI / any non-tty) see experiments/tail.sh
 
 Author
 ======
