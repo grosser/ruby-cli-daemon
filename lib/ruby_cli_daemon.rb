@@ -18,18 +18,20 @@ module RubyCliDaemon
 
       loop do
         return unless (command = wait_for_command(server))
-        command, env = command
+        command, tty, env = command
         # execute the command in a fork
         capture :STDOUT, "#{socket}.out" do
           capture :STDERR, "#{socket}.err" do
-            _, status = Process.wait2(fork do
-              ENV.replace env # uncovered
-              ARGV.replace(command) # uncovered
-              load path # uncovered
-            end)
+            capture :STDIN, tty do
+              _, status = Process.wait2(fork do
+                ENV.replace env # uncovered
+                ARGV.replace(command) # uncovered
+                load path # uncovered
+              end)
 
-            # send back response
-            File.write("#{socket}.status", status.exitstatus)
+              # send back response
+              File.write("#{socket}.status", status.exitstatus)
+            end
           end
         end
       end
@@ -84,14 +86,17 @@ module RubyCliDaemon
       return unless IO.select([server], nil, nil, TIMEOUT)
 
       connection = server.accept
+
       command = connection.gets.shellsplit
+      tty = connection.gets.chomp
 
       env = connection.read.split("--RCD-- ")
       env.shift
       env = Hash[env.map { |s| s.split(/ /, 2) }]
 
       connection.close
-      [command, env]
+
+      [command, tty, env]
     end
 
     def create_socket(socket)
@@ -103,12 +108,11 @@ module RubyCliDaemon
     # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
     def capture(stream, path)
       const = Object.const_get(stream)
+      const.sync = true
       old_stream = const.dup
-      const.flush # not sure if that's necessary
       const.reopen(path)
       yield
     ensure
-      const.flush # not sure if that's necessary
       const.reopen(old_stream)
     end
   end

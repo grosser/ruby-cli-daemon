@@ -30,7 +30,8 @@ Traps
 TODO
 ====
  - support multiline inputs
- - support stdin
+ - support piping to program
+ - support `STDOUT.tty?` when tty
  - restart when Gemfile.lock changes
  - support debian
  - do not print "Terminated" when killing log streamers (happens on osx CI) see experiments/tail.sh
