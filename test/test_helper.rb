@@ -13,6 +13,24 @@ class << Minitest
   end
 end
 
+Minitest::Test.class_eval do
+  # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
+  def capture_stream(stream)
+    stream = Object.const_get(stream)
+    begin
+      old = stream.dup
+      Tempfile.open('tee') do |capture|
+        stream.reopen(capture)
+        yield
+        capture.rewind
+        capture.read
+      end
+    ensure
+      stream.reopen(old)
+    end
+  end
+end
+
 require "maxitest/autorun"
 require "maxitest/threads"
 require "maxitest/timeout"

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require_relative "test_helper"
 require "rake/version"
+require "ostruct"
 
 SingleCov.covered!
 
@@ -74,13 +75,36 @@ describe RubyCliDaemon do
 
   describe ".capture" do
     it "captures all output" do
-      Tempfile.create "file" do |f|
-        RubyCliDaemon.send(:capture, :STDOUT, f.path) do
+      begin
+        old = STDOUT.dup
+        Tempfile.create "file" do |f|
+          RubyCliDaemon.send(:replace_stream, :STDOUT, f.path)
           puts 1
           system "echo 2"
+          f.rewind
+          f.read.must_equal "1\n2\n"
         end
-        f.rewind
-        f.read.must_equal "1\n2\n"
+      ensure
+        STDOUT.reopen(old)
+      end
+    end
+  end
+
+  describe "#replace_env" do
+    it "replaces everything" do
+      old_argv = ARGV
+      old_env = ENV.to_h
+      old_stdout = STDOUT.dup
+      old_stderr = STDERR.dup
+
+      begin
+        connection = OpenStruct.new(accept: OpenStruct.new(gets: "foo", read: "bar"))
+        RubyCliDaemon.send(:replace_env, connection, "foo")
+      ensure
+        ARGV.replace old_argv
+        ENV.replace old_env
+        STDOUT.reopen old_stdout
+        STDERR.reopen old_stderr
       end
     end
   end

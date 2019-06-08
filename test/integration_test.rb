@@ -7,19 +7,6 @@ require "tmpdir"
 SingleCov.not_covered!
 
 describe "ruby-cli-daemon.sh" do
-  # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
-  def capture_stderr
-    old_stderr = STDERR.dup
-    Tempfile.open('tee_stderr') do |capture|
-      STDERR.reopen(capture)
-      yield
-      capture.rewind
-      capture.read
-    end
-  ensure
-    STDERR.reopen(old_stderr)
-  end
-
   def cli(*argv, fail: false, capture: true, &block)
     command = ["#{Bundler.root}/bin/ruby-cli-daemon.sh", *argv].shelljoin
     output = IO.popen("#{command} #{"2>&1" if capture}", &(block || :read))
@@ -111,7 +98,7 @@ describe "ruby-cli-daemon.sh" do
     end
 
     it "uses stderr" do
-      capture_stderr do
+      capture_stream :STDERR do
         output = cli("rake", "--ohnooo", fail: true, capture: false)
         output.must_equal ""
       end.must_include "invalid option: --ohnooo\n"

@@ -17,21 +17,16 @@ module RubyCliDaemon
       server = create_socket(socket) # do this last, it signals we are ready
 
       loop do
-        return unless (command = wait_for_command(server))
-        command, env = command
-        # execute the command in a fork
-        capture :STDOUT, "#{socket}.out" do
-          capture :STDERR, "#{socket}.err" do
-            _, status = Process.wait2(fork do
-              ENV.replace env # uncovered
-              ARGV.replace(command) # uncovered
-              load path # uncovered
-            end)
+        return unless (connection = wait_for_client(server))
 
-            # send back response
-            File.write("#{socket}.status", status.exitstatus)
-          end
-        end
+        # execute the command in a fork
+        _, status = Process.wait2(fork do
+          replace_env connection, socket # uncovered
+          load path # uncovered
+        end)
+
+        # send back response
+        File.write("#{socket}.status", status.exitstatus)
       end
     ensure
       # signal that this program is done so ruby-sli-daemon.sh restarts it
@@ -80,18 +75,24 @@ module RubyCliDaemon
       result.is_a?(StandardError) ? raise(result) : result
     end
 
-    def wait_for_command(server)
+    def wait_for_client(server)
       return unless IO.select([server], nil, nil, TIMEOUT)
+      server
+    end
 
+    def replace_env(server, socket)
       connection = server.accept
-      command = connection.gets.shellsplit
+
+      ARGV.replace connection.gets.shellsplit
 
       env = connection.read.split("--RCD-- ")
       env.shift
-      env = Hash[env.map { |s| s.split(/ /, 2) }]
+      ENV.replace Hash[env.map { |s| s.split(/ /, 2) }]
 
       connection.close
-      [command, env]
+
+      replace_stream :STDOUT, "#{socket}.out"
+      replace_stream :STDERR, "#{socket}.err"
     end
 
     def create_socket(socket)
@@ -99,16 +100,10 @@ module RubyCliDaemon
       UNIXServer.new(socket)
     end
 
-    # StringIO does not work with rubies `system` call that `sh` uses under the hood, so using Tempfile + reopen
-    # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
-    def capture(stream, path)
+    def replace_stream(stream, path)
       const = Object.const_get(stream)
-      const.sync = true
-      old_stream = const.dup
       const.reopen(path)
-      yield
-    ensure
-      const.reopen(old_stream)
+      const.sync = true
     end
   end
 end
