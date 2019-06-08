@@ -6,6 +6,24 @@ require "ostruct"
 SingleCov.covered!
 
 describe RubyCliDaemon do
+  def restore_env
+    old_argv = ARGV
+    old_env = ENV.to_h
+    old_stdout = STDOUT.dup
+    old_stderr = STDERR.dup
+    old_stdin = STDIN.dup
+
+    begin
+      yield
+    ensure
+      ARGV.replace old_argv
+      ENV.replace old_env
+      STDOUT.reopen old_stdout
+      STDERR.reopen old_stderr
+      STDIN.reopen old_stdin
+    end
+  end
+
   around { |test| Dir.mktmpdir { |d| Dir.chdir(d) { test.call } } }
 
   it "has a VERSION" do
@@ -28,15 +46,26 @@ describe RubyCliDaemon do
 
   describe ".start" do
     it "waits for input and executes it" do
+      UNIXSocket.any_instance.stubs(:read).returns("") # TODO: this works from the cli but not in test :(
+
       Thread.new { RubyCliDaemon.start("foo", "rake") }
 
       sleep 0.2 # wait for socket to open
-      UNIXSocket.open("foo") { |socket| socket.puts "--version\n" }
-      sleep 0.2 # wait for command to process
-      maxitest_kill_extra_threads
 
-      File.read("foo.out").must_equal "rake, version #{Rake::VERSION}\n"
-      File.read("foo.err").must_equal ""
+      restore_env do
+        capture_stream(:STDOUT) do
+          UNIXSocket.open("foo") do |socket|
+            socket.send_io STDOUT
+            socket.send_io STDERR
+            socket.send_io STDIN
+            socket.puts "--version"
+          end
+
+          sleep 0.2 # wait for command to process
+
+          maxitest_kill_extra_threads
+        end.must_equal "rake, version #{Rake::VERSION}\n"
+      end
       File.read("foo.status").must_equal "0"
     end
 
@@ -73,38 +102,12 @@ describe RubyCliDaemon do
     end
   end
 
-  describe ".capture" do
-    it "captures all output" do
-      begin
-        old = STDOUT.dup
-        Tempfile.create "file" do |f|
-          RubyCliDaemon.send(:replace_stream, :STDOUT, f.path)
-          puts 1
-          system "echo 2"
-          f.rewind
-          f.read.must_equal "1\n2\n"
-        end
-      ensure
-        STDOUT.reopen(old)
-      end
-    end
-  end
-
   describe "#replace_env" do
     it "replaces everything" do
-      old_argv = ARGV
-      old_env = ENV.to_h
-      old_stdout = STDOUT.dup
-      old_stderr = STDERR.dup
-
-      begin
+      restore_env do
         connection = OpenStruct.new(accept: OpenStruct.new(gets: "foo", read: "bar"))
-        RubyCliDaemon.send(:replace_env, connection, "foo")
-      ensure
-        ARGV.replace old_argv
-        ENV.replace old_env
-        STDOUT.reopen old_stdout
-        STDERR.reopen old_stderr
+        connection.accept.stubs(:recv_io).returns STDOUT, STDERR, STDIN
+        RubyCliDaemon.send(:replace_env, connection)
       end
     end
   end

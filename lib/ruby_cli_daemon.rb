@@ -17,15 +17,15 @@ module RubyCliDaemon
       server = create_socket(socket) # do this last, it signals we are ready
 
       loop do
-        return unless (connection = wait_for_client(server))
+        return unless IO.select([server], nil, nil, TIMEOUT)
 
-        # execute the command in a fork
+        # execute the gems binary in a fork
         _, status = Process.wait2(fork do
-          replace_env connection, socket # uncovered
+          replace_env server # uncovered
           load path # uncovered
         end)
 
-        # send back response
+        # send back exit status
         File.write("#{socket}.status", status.exitstatus)
       end
     ensure
@@ -75,35 +75,22 @@ module RubyCliDaemon
       result.is_a?(StandardError) ? raise(result) : result
     end
 
-    def wait_for_client(server)
-      return unless IO.select([server], nil, nil, TIMEOUT)
-      server
-    end
-
-    def replace_env(server, socket)
+    def replace_env(server)
       connection = server.accept
-
-      ARGV.replace connection.gets.shellsplit
-
-      env = connection.read.split("--RCD-- ")
-      env.shift
-      ENV.replace Hash[env.map { |s| s.split(/ /, 2) }]
-
-      connection.close
-
-      replace_stream :STDOUT, "#{socket}.out"
-      replace_stream :STDERR, "#{socket}.err"
+      begin
+        STDOUT.reopen connection.recv_io
+        STDERR.reopen connection.recv_io
+        STDIN.reopen connection.recv_io
+        ARGV.replace connection.gets.shellsplit
+        ENV.replace Hash[connection.read.split("--RCD--").map { |s| s.split(/ /, 2) }]
+      ensure
+        connection.close # not sure if this is necessary
+      end
     end
 
     def create_socket(socket)
       FileUtils.mkdir_p(File.dirname(socket))
       UNIXServer.new(socket)
-    end
-
-    def replace_stream(stream, path)
-      const = Object.const_get(stream)
-      const.reopen(path)
-      const.sync = true
     end
   end
 end

@@ -2,10 +2,10 @@ Preforking to make all ruby binaries faster.
 
 Worker:
 - starts when needed
-- is kept alive per directory and executable
-- prefer bundled executables
+- kept alive per directory and executable
+- prefers bundled executables
 - stops when not used for 1 hour
-- uses callee's environment
+- receives environment / stdin / stdout / stderr
 
 Usage
 =====
@@ -15,25 +15,21 @@ Usage
 gem install ruby-cli-daemon
 ruby -rruby_cli_daemon -e "RubyCliDaemon.install '/usr/local/bin/ruby-cli-daemon'"
 
-alias rubocop="ruby-cli-daemon rubocop --color" # add to ~/.bash_profile
+alias rubocop="ruby-cli-daemon rubocop" # add to ~/.bash_profile
 rubocop -v # cold start 1.20s
-rubocop -v # warm start 0.08s
+rubocop -v # warm start 0.19s # NOTE: still ~120ms easy fat to trim for future versions
 ```
 
 Traps
 =====
  - do not use to `rake release` a gem, since gemspec will not be reloaded
  - worker does not restart when: Gemfile/Gem/monkey-patches change
- - env vars that are read on startup cannot be changed
- - no TTY might some programs skip confirmation prompts or hang
+ - env vars that are used on startup cannot be changed
 
 TODO
 ====
- - support multiline inputs
- - support stdin
  - restart when Gemfile.lock changes
  - support debian
- - do not print "Terminated" when killing log streamers (happens on osx CI / any non-tty) see experiments/tail.sh
 
 Author
 ======

@@ -50,23 +50,20 @@ fi
 
 # prepare output so we can start tailing
 status="${socket}.status"
-stdout="${socket}.out"
-stderr="${socket}.err"
-rm -f $status $stdout $stderr # clear previous
-touch $stdout $stderr
+rm -f $status # clear previous
 
-# send the command and parsable env vars to the daemon
-{ echo $@; awk 'BEGIN{for(v in ENVIRON) printf "--RCD-- %s %s", v, ENVIRON[v] }';} | nc -U $socket
+# send IOs / command / env ... TODO: use perl or awk or bash to be faster ... see experiments/send_io.sh
+ruby --disable-gems -rsocket -rshellwords -e "
+  s = UNIXSocket.new('$socket')
+  s.send_io STDOUT
+  s.send_io STDERR
+  s.send_io STDIN
+  s.puts ARGV.shelljoin # as a single line <-> gets
+  s.print ENV.map { |k, v| %(#{k} #{v}) }.join('--RCD--')
+" -- "$@"
 
-# stream output
-tail -f $stdout &
-tail -f $stderr >&2 &
-
-# wait for command to finish, tight loop so we don't lose time
+# wait for command to finish, tight loop so we don't lose time TODO: open another socket to be faster/efficient?
 while [ ! -f $status ]; do sleep 0.02; done
-
-# kill log streamers, they should be done (but not the spawned worker)
-for job in `jobs -p | tail -n2`; do kill $job; done
 
 # replay exit status
 exit "$(cat $status)"

@@ -16,17 +16,18 @@ end
 Minitest::Test.class_eval do
   # https://grosser.it/2018/11/23/ruby-capture-stdout-without-stdout/
   def capture_stream(stream)
-    stream = Object.const_get(stream)
+    stream = Object.const_get stream
     begin
       old = stream.dup
       Tempfile.open('tee') do |capture|
-        stream.reopen(capture)
+        stream.reopen capture
+        stream.sync = true
         yield
         capture.rewind
         capture.read
       end
     ensure
-      stream.reopen(old)
+      stream.reopen old
     end
   end
 end
