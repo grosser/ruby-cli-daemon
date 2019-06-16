@@ -20,3 +20,12 @@ desc "Run rubocop"
 task :rubocop do
   sh "rubocop --parallel"
 end
+
+desc "Debug killing or other long running things"
+task :sleep do
+  puts "pid #{Process.pid}"
+  30.times do
+    puts "sleeping"
+    sleep 1
+  end
+end

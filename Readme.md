@@ -20,16 +20,19 @@ rubocop -v # cold start 1.20s
 rubocop -v # warm start 0.19s # NOTE: still ~120ms easy fat to trim for future versions
 ```
 
-Traps
-=====
- - do not use to `rake release` a gem, since gemspec will not be reloaded
+Gotchas
+=======
+ - `rake release` to release  a gem does not work, since gemspec is not be reloaded
  - worker does not restart when: Gemfile/Gem/monkey-patches change
  - env vars that are used on startup cannot be changed
+ - INT signal is translated to TERM
 
 TODO
 ====
  - restart when Gemfile.lock changes
  - support debian
+ - support sending INT from Ctrl+C instead of TERM
+ - show `Killed: 9` when process was sig-killed
 
 Author
 ======

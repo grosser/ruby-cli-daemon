@@ -21,12 +21,13 @@ module RubyCliDaemon
 
         # execute the gems binary in a fork
         _, status = Process.wait2(fork do
+          File.write("#{socket}.pid", Process.pid) # uncovered
           replace_env server # uncovered
           load path # uncovered
         end)
 
         # send back exit status
-        File.write("#{socket}.status", status.exitstatus)
+        File.write("#{socket}.status", status.exitstatus || 127)
       end
     ensure
       # signal that this program is done so ruby-sli-daemon.sh restarts it

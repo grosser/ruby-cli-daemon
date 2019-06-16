@@ -7,10 +7,10 @@ require "tmpdir"
 SingleCov.not_covered!
 
 describe "ruby-cli-daemon.sh" do
-  def cli(*argv, fail: false, capture: true, &block)
+  def cli(*argv, status: 0, capture: true, &block)
     command = ["#{Bundler.root}/bin/ruby-cli-daemon.sh", *argv].shelljoin
     output = IO.popen("#{command} #{"2>&1" if capture}", &(block || :read))
-    raise "#{fail ? "UNEXPECTED SUCCESS" : "FAILURE"}\n#{command}\n#{output}" if $?.success? == fail
+    raise "UNEXPECTED STATUS #{$?.exitstatus}\n#{command}\n#{output}" if $?.exitstatus != status
     output&.gsub(/.*Terminated.*\n/, "")
   end
 
@@ -34,11 +34,11 @@ describe "ruby-cli-daemon.sh" do
     end
 
     it "shows help without arguments" do
-      cli(fail: true).must_include "Show this"
+      cli(status: 1).must_include "Show this"
     end
 
     it "fails with unknown flags" do
-      cli("--foo", fail: true).must_include "Show this"
+      cli("--foo", status: 1).must_include "Show this"
     end
   end
 
@@ -53,7 +53,7 @@ describe "ruby-cli-daemon.sh" do
     end
 
     it "fails when no process was found" do
-      cli("stop", fail: true).must_equal ""
+      cli("stop", status: 1).must_equal ""
     end
   end
 
@@ -92,20 +92,20 @@ describe "ruby-cli-daemon.sh" do
     end
 
     it "can fail" do
-      output = cli("rake", "--ohnooo", fail: true)
+      output = cli("rake", "--ohnooo", status: 1)
       output.must_include "invalid option: --ohnoo"
       assert_running 1
     end
 
     it "uses stderr" do
       capture_stream :STDERR do
-        output = cli("rake", "--ohnooo", fail: true, capture: false)
+        output = cli("rake", "--ohnooo", status: 1, capture: false)
         output.must_equal ""
       end.must_include "invalid option: --ohnooo\n"
     end
 
     it "fails when worker crashes" do
-      out = cli "wtf", fail: true
+      out = cli "wtf", status: 1
       out.must_include "No gem with executable wtf found"
     end
 
@@ -153,6 +153,28 @@ describe "ruby-cli-daemon.sh" do
       with_env CUSTOM: "Y\n|\\Z" do
         cli("rake", "foo").must_equal "XY\n|\\Z\n"
       end
+    end
+
+    it "can get Ctrl+C ed" do
+      File.write("Rakefile", <<-RUBY)
+        task(:foo) { sleep 5 } # more than test timeout
+      RUBY
+      cli("rake", "--version") # start daemon
+      t = Thread.new { cli("rake", "foo", status: 1) } # start sleeper
+      sleep 0.5 # let sleeper start
+      Process.kill(:TERM, `pgrep -lf "rake"`.split("\n").last.to_i) # kill sleeper
+      t.value.must_include "SignalException: SIGTERM"
+    end
+
+    it "can get sigkilled" do
+      File.write("Rakefile", <<-RUBY)
+        task(:foo) { sleep 5 } # more than test timeout
+      RUBY
+      cli("rake", "--version") # start daemon
+      t = Thread.new { cli("rake", "foo", status: 127) } # start sleeper
+      sleep 0.5 # let sleeper start
+      Process.kill(:KILL, `pgrep -lf "rake"`.split("\n").last.to_i) # kill sleeper
+      t.value.must_equal ""
     end
   end
 end

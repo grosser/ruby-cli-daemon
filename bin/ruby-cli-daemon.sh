@@ -48,9 +48,10 @@ if [[ ! -e $socket ]]; then
   done
 fi
 
-# prepare output so we can start tailing
+# clear previous exit and pid
 status="${socket}.status"
-rm -f $status # clear previous
+pid="${socket}.pid"
+rm -f $status $pid
 
 # send IOs / command / env ... TODO: use perl or awk or bash to be faster ... see experiments/send_io.sh
 ruby --disable-gems -rsocket -rshellwords -e "
@@ -61,6 +62,11 @@ ruby --disable-gems -rsocket -rshellwords -e "
   s.puts ARGV.shelljoin # as a single line <-> gets
   s.print ENV.map { |k, v| %(#{k} #{v}) }.join('--RCD--')
 " -- "$@"
+
+# pass HUP INT QUIT PIPE TERM to the child process
+# - substract 128 which bash adds
+# - we cannot send 2, so we send 15 instead which is pretty close
+trap 'ex=$(expr $? - 128); if [[ "$ex" = "2" ]]; then ex=15; fi; echo $ex; kill -$ex $(cat $pid)' 1 2 3 13 15
 
 # wait for command to finish, tight loop so we don't lose time TODO: open another socket to be faster/efficient?
 while [ ! -f $status ]; do sleep 0.02; done
