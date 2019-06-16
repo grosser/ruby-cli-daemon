@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ruby-cli-daemon (0.5.1)
+    ruby-cli-daemon (0.6.0)
 
 GEM
   remote: https://rubygems.org/
