@@ -1,7 +1,10 @@
 #!/usr/bin/env sh
-set -e # add "x" to debug
+set -e # add "x" here to debug
 
-lib=$(dirname $(realpath $0))/../lib
+# except for development we run from a symlink, make development and `gem open` easy
+# NOTE: cannot use realpath since that is only available when coreutils is installed
+real=$(readlink $0) || real=$0
+lib=$(dirname $real)/../lib
 
 case "$1" in
 stop)
@@ -13,7 +16,7 @@ stop)
   ;;
 ""|-*)
   echo "Usage:"
-  echo "  ruby-cli-daemon <ruby-executable> [arg]*"
+  echo "  ruby-cli-daemon <gem-executable> [arg]*"
   echo "    Start or use background worker to execute command"
   echo "    For example: ruby-cli-daemon rake --version"
   echo ""

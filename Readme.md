@@ -27,6 +27,12 @@ Gotchas
  - env vars that are used on startup cannot be changed
  - INT signal is translated to TERM
 
+
+Development
+===========
+
+ - Run locally with `./bin/ruby-cli-daemon.sh rake --version`
+
 TODO
 ====
  - restart when Gemfile.lock changes
